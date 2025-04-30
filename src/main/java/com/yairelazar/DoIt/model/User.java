@@ -1,11 +1,15 @@
 package com.yairelazar.DoIt.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.List;
+
 @Entity
 @Table(name = "users")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class User {
@@ -19,9 +23,20 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    // קונסטרקטור מותאם לשני שדות בלבד (ליצירת משתמש חדש)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
+    private List<Task> tasks;
+
     public User(String username, String password) {
         this.username = username;
         this.password = password;
+    }
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "id=" + id +
+                ", username='" + username + '\'' +
+                '}';
     }
 }
