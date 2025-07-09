@@ -9,9 +9,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class TaskService {
@@ -26,25 +24,36 @@ public class TaskService {
     }
 
     public List<Task> getTasksByUser(User user) {
-        System.out.println("Fetching tasks for user: " + user.getUsername());
-        List<Task> tasks = taskRepository.findByUser(user);
-        System.out.println("Found tasks: " + tasks);
-        return tasks;
+        List<Task> createdTasks = taskRepository.findByCreator(user);
+        List<Task> sharedTasks = taskRepository.findBySharedWithContains(user);
+
+        Set<Task> allTasks = new HashSet<>();
+        allTasks.addAll(createdTasks);
+        allTasks.addAll(sharedTasks);
+
+        return new ArrayList<>(allTasks);
     }
+
 
     public Optional<Task> getTaskById(Long id) {
         return taskRepository.findById(id);
     }
 
-    public Task addTask(Task task, User user) {
-        task.setUser(user);
+    public Task addTask(Task task, User userFromJwt) {
+        // שליפה מחדש של ה-User כדי לקבל אובייקט Managed עם ID תקף
+        User userFromDb = userRepository.findByUsername(userFromJwt.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        task.setCreator(userFromDb);
         return taskRepository.save(task);
     }
 
+
+
     public Task updateTask(Task updatedTask, User user) {
         Optional<Task> existing = taskRepository.findById(updatedTask.getId());
-        if (existing.isPresent() && existing.get().getUser().getId().equals(user.getId())) {
-            updatedTask.setUser(user); // ודא שהבעלות לא משתנה
+        if (existing.isPresent() && existing.get().getCreator().getId().equals(user.getId())) {
+            updatedTask.setCreator(user); // ודא שהבעלות לא משתנה
             return taskRepository.save(updatedTask);
         }
         throw new RuntimeException("Task not found or not authorized");
@@ -53,7 +62,7 @@ public class TaskService {
         Optional<Task> optionalTask = taskRepository.findById(id);
         if (optionalTask.isPresent()) {
             Task task = optionalTask.get();
-            if (!task.getUser().getId().equals(user.getId())) {
+            if (!task.getCreator().getId().equals(user.getId())) {
                 throw new AccessDeniedException("Not authorized");
             }
 
@@ -84,11 +93,29 @@ public class TaskService {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
 
-        if (!task.getUser().getId().equals(user.getId())) {
+        if (!task.getCreator().getId().equals(user.getId())) {
             throw new AccessDeniedException("You are not authorized to delete this task");
         }
 
         taskRepository.delete(task);
     }
+    public void shareTask(Long taskId, List<String> usernames, User currentUser) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Task not found"));
+
+        if (!task.getCreator().getId().equals(currentUser.getId())) {
+            throw new AccessDeniedException("You are not authorized to share this task");
+        }
+
+        List<User> usersToShareWith = userRepository.findByUsernameIn(usernames);
+        if (usersToShareWith.isEmpty()) {
+            throw new RuntimeException("No valid users found");
+        }
+
+        task.getSharedWith().addAll(usersToShareWith);
+        taskRepository.save(task);
+    }
+
+
 
 }

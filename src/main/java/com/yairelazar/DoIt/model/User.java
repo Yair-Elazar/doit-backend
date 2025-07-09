@@ -1,10 +1,14 @@
 package com.yairelazar.DoIt.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "users")
@@ -23,9 +27,14 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference
-    private List<Task> tasks;
+    @OneToMany(mappedBy = "creator", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference(value = "creator-task")
+    private List<Task> tasksCreated;
+
+    @ManyToMany(mappedBy = "sharedWith")
+    @JsonIgnore
+    private Set<Task> sharedTasks;
+
 
     public User(String username, String password) {
         this.username = username;

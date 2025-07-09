@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import com.yairelazar.DoIt.dto.LoginResponse;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -74,5 +75,10 @@ public class UserController {
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
         }
+    }
+    @GetMapping("/usernames")
+    public ResponseEntity<List<String>> getAllUsernames() {
+        List<String> usernames = userService.getAllUsernames();
+        return ResponseEntity.ok(usernames);
     }
 }

@@ -8,7 +8,6 @@ public class CreateTaskRequest {
     private boolean completed;
 
     public CreateTaskRequest() {
-        // חובה קונסטרקטור ריק לספרינג
     }
 
     public String getTitle() {

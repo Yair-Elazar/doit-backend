@@ -1,10 +1,14 @@
 package com.yairelazar.DoIt.controller;
 
+import com.yairelazar.DoIt.dto.ShareTaskRequest;
 import com.yairelazar.DoIt.model.Task;
 import com.yairelazar.DoIt.model.User;
+import com.yairelazar.DoIt.repository.TaskRepository;
+import com.yairelazar.DoIt.repository.UserRepository;
 import com.yairelazar.DoIt.security.CustomUserDetails;
 import com.yairelazar.DoIt.service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -45,6 +49,7 @@ public class TaskController {
     @PostMapping
     public Task addTask(@RequestBody Task task, @AuthenticationPrincipal CustomUserDetails userDetails) {
         User user = userDetails.getUser();
+        System.out.println("User id: " + user.getId());
         return taskService.addTask(task, user);
     }
 
@@ -70,4 +75,16 @@ public class TaskController {
         User user = userDetails.getUser();
         return taskService.partialUpdate(id, updates, user);
     }
+    @PostMapping("/share")
+    public ResponseEntity<String> shareTask(@RequestBody ShareTaskRequest request,
+                                            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        try {
+            taskService.shareTask(request.getTaskId(), request.getUsernames(), userDetails.getUser());
+            return ResponseEntity.ok("Task shared successfully");
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
+
 }

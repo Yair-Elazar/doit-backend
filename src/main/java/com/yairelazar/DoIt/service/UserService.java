@@ -6,7 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService {
@@ -37,7 +39,12 @@ public class UserService {
             return null;
 
         }
-
+    public List<String> getAllUsernames() {
+        return userRepository.findAll()
+                .stream()
+                .map(User::getUsername)
+                .collect(Collectors.toList());
+    }
 
     public Optional<User> findByUsername(String username) {
         return userRepository.findByUsername(username);
